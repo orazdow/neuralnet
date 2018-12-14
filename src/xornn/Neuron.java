@@ -6,6 +6,7 @@ public class Neuron {
     Double input;
     Double output;
     Double bias = 0.1;
+    Double logit = 0.0;
     Net.NType type;  
     ArrayList<Neuron> inputs;
     ArrayList<Double> weights;
@@ -18,7 +19,10 @@ public class Neuron {
     
     void connect(Neuron neuron){
         neuron.inputs.add(this);
-        neuron.weights.add(Math.random());
+        if(type != Net.NType.BIAS)
+            neuron.weights.add(Math.random());
+        else
+            neuron.weights.add(Net.initial_bias);
     }
     
     static double sigmoid(double in){
@@ -26,25 +30,31 @@ public class Neuron {
     }
     
     static double dsigmoid(double in){
-        return (in*(1.0-in));
+        return (sigmoid(in)*(1.0-sigmoid(in)));
     }
     
     void compute(){
+        // input node
         if(type == Net.NType.INPUT){
             output = input;
             return;
         }
-        double sum = 0;
-        int len = inputs.size();
-        
-        for(int i = 0; i < len; i++){
-            sum += inputs.get(i).output*weights.get(i);
+        // bias node
+        if(type == Net.NType.BIAS){
+            output = 1.0;
+            return;
         }
-        sum += bias;
+        // sum input logit
+        logit = 0.0;
+        int len = inputs.size();
+        for(int i = 0; i < len; i++){
+            logit += inputs.get(i).output*weights.get(i);
+        }
+        //hidden node
         if(type == Net.NType.HIDDEN)
-            output = sigmoid(sum);
-        else
-            output = sigmoid(sum); //just using sigmoid for now
+            output = sigmoid(logit);
+        else //output node
+            output = sigmoid(logit); //just using sigmoid for now
     }
     
 }

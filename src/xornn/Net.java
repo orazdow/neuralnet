@@ -10,9 +10,10 @@ public class Net {
     
     ArrayList<ArrayList<Neuron>> layers = new ArrayList<>();
     int[] topo = {2,2,1};
-    enum NType{INPUT, HIDDEN, OUTPUT};
+    enum NType{INPUT, HIDDEN, OUTPUT, BIAS};
     double outError = 0;
-    double learningRate = 0.1;
+    double learningRate = 0.2;
+    static double initial_bias = 0.0;
     
     Net(){
         init(topo);
@@ -26,9 +27,11 @@ public class Net {
     
     void setInputs(Double[] data) throws Exception{
         ArrayList<Neuron> layer = layers.get(0);
-        if(data.length != layer.size()) throw new Exception("data vector does not match input vector");
+        if(data.length != layer.size()-1) throw new Exception("data vector does not match input vector");
             for(int i = 0; i < data.length; i++){
+                if(layer.get(i).type != NType.BIAS)
                 layer.get(i).input = data[i];
+                else{System.out.println("BIAS");}
             }
     }
     
@@ -44,88 +47,69 @@ public class Net {
         return layers.get(layers.size()-1).get(0).output;
     }
     
-    void backwardError(Neuron n, double target, double error){
-        if(n.type == NType.INPUT){return;}
-        double e = 0.0;
-        double err = (n.type == NType.OUTPUT) ? error : target;
-
-        for(int i = 0; i < n.inputs.size(); i++){
-            double g = gradient(n.inputs.get(i).output, n.output, err, (n.type == NType.OUTPUT));
-            double w = n.weights.get(i);
-            w -= g;
-            n.weights.set(i, w);
-            e += g;
-        }
-            double b = gradient(1, n.output,err, (n.type == NType.OUTPUT));
-            n.bias -= b;
-            e+= b;
-            
-        for(int i = 0; i < n.inputs.size(); i++)
-            backwardError(n.inputs.get(i), target, err);
-    }
-        
-    double gradient(double logitInput, double neuronOutput, double target){
-        return learningRate* logitInput * Neuron.dsigmoid(neuronOutput) * (target);
+    
+    double error(double y, double yhat){
+        // return 0.5*(y-yhat)*(y-yhat);
+        return (y-yhat)*(y-yhat);
     }
 
-    double gradient(double logitInput, double neuronOutput, double target, boolean outputLayer){
-      if(outputLayer){
-          return -target*learningRate*Neuron.dsigmoid(neuronOutput);
-      }else{
-          return -target*logitInput*learningRate*Neuron.dsigmoid(neuronOutput);
-      }
+    double derror(double y, double yhat){
+        // return (yhat-y);
+        return -2*(y-yhat);
     }
     
-    boolean iterate(Data data, int index, double limit){
-        outError = 0;
-       
+    void backProp(Neuron n, double indelta){
+        if(n.type == NType.INPUT){return;}
+        
+        double nextdelta = 0.0;
+        for(int i = 0; i < n.inputs.size(); i++){ 
+            // sum new delta
+            double w = n.weights.get(i);    
+            nextdelta += indelta*w;
+         
+            // update: w_i = w_i-(lr * z_i * delta * dsig(a))
+            double gradient = learningRate * indelta * n.inputs.get(i).output * Neuron.dsigmoid(n.logit); 
+            w -= gradient;
+            n.weights.set(i, w);            
+        }
+        
+        for(int i = 0; i < n.inputs.size(); i++){
+            backProp(n.inputs.get(i), nextdelta);
+        }
+        
+    }
+    
+    // stochastic gradient descent, fwd/bkwd for each sample
+    double iterate(Data data, int index){
+        
         Data.Frame frame = data.frames.get(index);
-        double target = frame.targets.get(0);
         try {
             setInputs(frame.getFeatures());
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
+        double error = 0.0;
         computeForward();
-        double out = layers.get(layers.size()-1).get(0).output;
-        outError +=(target-out);
-        System.out.println(out+" : "+target);
-           
-        System.out.println("error: "+outError);
+        double target = frame.targets.get(0);
         
-        boolean rtn = (Math.abs(outError) < limit);
+        ArrayList<Neuron> layer = layers.get(layers.size()-1);
+ 
+        // backprop with error derivative on output layer
+        for(Neuron n : layer){
+            double out = n.output;
+            error += error(target, out);
+            backProp(n, derror(target, out));
+        }
         
-        backwardError(layers.get(layers.size()-1).get(0), target, outError);
-        
-        return rtn;
+        return error;
     }
     
-    boolean forwardBatch(Data data, int index, int num, double limit){
-        outError = 0;
-        double target = 0;
-        // compute error over batch
-        for(int i = index; i < index+num; i++) {
-            Data.Frame frame = data.frames.get(i);
-            target = frame.targets.get(0);
-            try {
-                setInputs(frame.getFeatures());
-            } catch (Exception ex) {
-                System.out.println(ex.getMessage());
-            }
-            computeForward();
-            double out = layers.get(layers.size()-1).get(0).output;
-//            outError +=0.5*Math.pow((target-out),2);
-            outError +=(target-out);
-            System.out.println(out+" : "+target);
-        }    
-        System.out.println("error: "+outError);
-        //start backprop on output
-        backwardError(layers.get(layers.size()-1).get(0), target, outError);
-        
-        return (Math.abs(outError) < limit);
-        
-
+    //backward for n forward passes in batch
+    double miniBatch(Data data, int index, int stride, double errlimit){
+        return 0.0;
     }
+    
+    // forward pass
     void computeForward(){        
         for(ArrayList<Neuron> layer : layers){
             for(Neuron n : layer){
@@ -152,6 +136,8 @@ public class Net {
         for(int i = 0; i < n; i++)
             layer.add(new Neuron(type));
 
+        if(type != NType.OUTPUT){layer.add(new Neuron(NType.BIAS));}
+        
         return layer;
     }
      
