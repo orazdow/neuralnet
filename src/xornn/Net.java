@@ -13,7 +13,7 @@ public class Net {
     int[] topo = {2,2,1};
     enum NType{INPUT, HIDDEN, OUTPUT, BIAS};
     double outError = 0;
-    double learningRate = 0.2;
+    double learningRate = 0.3;
     static double initial_bias = 0.0;
     
     Net(){

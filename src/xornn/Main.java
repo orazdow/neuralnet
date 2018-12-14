@@ -50,7 +50,9 @@ public class Main extends PApplet{
                 fill((float)p*255);
                 rect(j*wh, i*wh, wh, wh);
             }
-        } 
+        }
+        fill(50, 200, 255);
+        text("click to retrain network", 15, 20);
     }
     
     public void settings(){
@@ -61,13 +63,13 @@ public class Main extends PApplet{
         nn.reset();
         train(nn);
         test(nn, 10);
-        errorMap(100, nn, 600);
         redraw();
     }
        
     public void setup(){
         noFill();  
         noStroke();
+        textSize(16);
         background(120);  
         noLoop();
         train(nn);
