@@ -2,6 +2,7 @@
 package xornn;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,7 +47,33 @@ public class Net {
         computeForward();
         return layers.get(layers.size()-1).get(0).output;
     }
+ 
+    double predict(Double[] data, int targetIndex){
+        Double[] features = Arrays.copyOfRange(data, 0, targetIndex);
+        try {
+            setInputs(features);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        computeForward();
+        return layers.get(layers.size()-1).get(0).output;
+    }
     
+    void reset(){
+        for(ArrayList<Neuron> layer : layers){
+            for(Neuron n : layer){
+                if(n.type != NType.INPUT && n.type != NType.BIAS){
+                    for(int i = 0; i < n.inputs.size(); i++) {
+                        if(n.inputs.get(i).type != NType.BIAS){
+                            n.weights.set(i, Math.random());
+                        }else{
+                            n.weights.set(i, Net.initial_bias);
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     double error(double y, double yhat){
         // return 0.5*(y-yhat)*(y-yhat);
@@ -72,7 +99,7 @@ public class Net {
             w -= gradient;
             n.weights.set(i, w);            
         }
-        
+        //nextdelta *= Neuron.dsigmoid(n.logit);
         for(int i = 0; i < n.inputs.size(); i++){
             backProp(n.inputs.get(i), nextdelta);
         }
