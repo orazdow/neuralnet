@@ -59,6 +59,16 @@ public class Net {
         return layers.get(layers.size()-1).get(0).output;
     }
     
+    double predict(Double[] features){
+        try {
+            setInputs(features);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        computeForward();
+        return layers.get(layers.size()-1).get(0).output;
+    }
+    
     void reset(){
         for(ArrayList<Neuron> layer : layers){
             for(Neuron n : layer){
@@ -75,18 +85,24 @@ public class Net {
         }
     }
     
+    void preturb(double... params){
+        Neuron n = layers.get(layers.size()-1).get(0);
+        for(int i = 0; i < params.length; i++){
+           if(n.inputs.get(i).type != NType.BIAS)
+               n.weights.set(i, params[i]);
+        }
+    }
+    
     double error(double y, double yhat){
-        // return 0.5*(y-yhat)*(y-yhat);
         return (y-yhat)*(y-yhat);
     }
 
     double derror(double y, double yhat){
-        // return (yhat-y);
         return -2*(y-yhat);
     }
     
     void backProp(Neuron n, double indelta){
-        if(n.type == NType.INPUT){return;}
+        if(n.type == NType.INPUT || n.type == NType.BIAS){return;}
         
         double nextdelta = 0.0;
         for(int i = 0; i < n.inputs.size(); i++){ 

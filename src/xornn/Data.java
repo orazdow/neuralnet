@@ -4,13 +4,22 @@ import java.util.ArrayList;
 
 public class Data {
     
+    Data(){}
+    Data(double[] x, double[] y){ addFrame(x, y); }
+    Data(double[][] x, double[] y){ addFrames(x, y); }
+    
     ArrayList<Frame> frames = new ArrayList<>();
     
     void addFrame(double[] X, double[] Y){
         frames.add(new Frame(X,Y));
     }
-    void addFrame(double[] X, double y){
-        frames.add(new Frame(X,y));
+    void addFrame(double[] X, double Y){
+        frames.add(new Frame(X,Y));
+    }
+    void addFrames(double[][] x, double[] y){
+        for(int i = 0; i < x.length; i++){
+            frames.add(new Frame(x[i],y[i]));
+        }
     }
  
     class Frame{
