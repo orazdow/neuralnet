@@ -26,9 +26,9 @@ public class Net {
     }
     
     
-    void setInputs(Double[] data) throws Exception{
+    void setInputs(Double[] data){
         ArrayList<Neuron> layer = layers.get(0);
-        if(data.length != layer.size()-1) throw new Exception("data vector does not match input vector");
+        if(data.length != layer.size()-1){System.out.println("data vector does not match input vector"); return;}
             for(int i = 0; i < data.length; i++){
                 if(layer.get(i).type != NType.BIAS)
                 layer.get(i).input = data[i];
@@ -69,13 +69,17 @@ public class Net {
         return layers.get(layers.size()-1).get(0).output;
     }
     
+    static double random(){
+       return (Math.random());
+    }
+    
     void reset(){
         for(ArrayList<Neuron> layer : layers){
             for(Neuron n : layer){
                 if(n.type != NType.INPUT && n.type != NType.BIAS){
                     for(int i = 0; i < n.inputs.size(); i++) {
                         if(n.inputs.get(i).type != NType.BIAS){
-                            n.weights.set(i, Math.random());
+                            n.weights.set(i, random());
                         }else{
                             n.weights.set(i, Net.initial_bias);
                         }
@@ -126,11 +130,8 @@ public class Net {
     double iterate(Data data, int index){
         
         Data.Frame frame = data.frames.get(index);
-        try {
-            setInputs(frame.getFeatures());
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-        }
+        setInputs(frame.getFeatures());
+
         double error = 0.0;
         computeForward();
         double target = frame.targets.get(0);
